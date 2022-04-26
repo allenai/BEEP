@@ -6,7 +6,9 @@ This code was developed in python 3.8 using the libraries listed in environment.
 
 ```conda env create -f environment.yml```
 
-Activate the conda environment using the command: ```conda activate core-env```
+Activate the conda environment using the command: ```conda activate beep-env```
+
+After activating the environment, run this command: ```python -m ipykernel install --user --name beep-env --display-name "Python (beep-env)"```. This will ensure that beep-env is available as a kernel option when running jupyter notebooks.
 
 In addition to environment setup, you will need access to the MIMIC-III dataset ([download here](https://physionet.org/content/mimiciii-demo/1.4/)). You will also need to download additional data and trained models from our AWS S3 bucket, especially if you are interested in replicating results from our paper. These resources can be downloaded using the following command:
 
@@ -111,7 +113,11 @@ Baghdad      NNP  I-NP  I-LOC
 
 The model_name_or_path argument can be used to supply a different pretrained model either by providing its string identifier on Huggingface or providing the path to a folder containing the model.
 
-Post extraction, mentions must be processed to remove negated mentions and the filtered mentions are then linked to MeSH concepts. This can be done using the following notebook in the literature-retrieval folder: ```mention_filtering_linking.ipynb```. You only need to provide the correct paths to input data (extracted mentions and raw texts) and output data in cells 3 and 8. Note that this MeSH linking procedure is also followed for retrieved literature since MeSH tags present in PubMed do not take term frequency into account. Again for reproducibility, we release final MeSH term outputs for all EHRs and retrieved literature under the mesh-terms folder in our S3 bucket.
+Post extraction, mentions must be processed to remove negated mentions and the filtered mentions are then linked to MeSH concepts. This can be done using the following notebooks in the literature-retrieval folder: ```mention_filtering.ipynb``` and ```mention_linking.ipynb```. 
+
+Mention filtering requires medspacy which unfortunately requires a version of spacy incompatible with scispacy requirements. Therefore, the filtering notebook alone must be run in a separate environment. To set up this environment, run ```conda env create -f medspacy_environment.yml``` and then activate it by running ```conda activate med-env```. After activating the environment, run: ```python -m ipykernel install --user --name med-env --display-name "Python (med-env)"```. This will ensure that med-env is available as a kernel option in the notebook. You also need to provide the correct paths to input data (extracted mentions and raw texts) and output data in cells 2 and 5. 
+
+Mention linking can be run in the beep-env environment, and requires correct input and output path specification in cells 1 and 3. Note that input to this notebook is the output of the filtering notebook. This MeSH linking procedure is also followed for retrieved literature since MeSH tags present in PubMed do not take term frequency into account. Again for reproducibility, we release final MeSH term outputs for all EHRs and retrieved literature under the mesh-terms folder in our S3 bucket.
 
 Given these MeSH terms for EHRs and outcome-specific literature, the sparse retriever can be run using the following notebook in the literature-retrieval folder: ```sparse_retriever.ipynb```. Again input and output paths can be changed in cells 2 and 7 to point to correct locations.
 
