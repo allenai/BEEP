@@ -12,7 +12,7 @@ After activating the environment, run this command: ```python -m ipykernel insta
 
 In addition to environment setup, you will need access to the MIMIC-III dataset ([download here](https://physionet.org/content/mimiciii-demo/1.4/)). You will also need to download additional data and trained models from our AWS S3 bucket, especially if you are interested in replicating results from our paper. These resources can be downloaded using the following command:
 
-```aws s3 sync --no-sign-request s3://ai2-s2-beep```
+```aws s3 sync --no-sign-request s3://ai2-s2-beep models/```
 
 Note that you need to have AWS CLI installed on your machine to execute this command. Move the pubmed_texts_and_dates.pkl file to the data directory.
 
