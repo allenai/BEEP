@@ -217,10 +217,21 @@ If you face any issues with the code, models, or with reproducing our results, p
 
 If you find our code useful, please cite the following paper:
 ```
-@article{naik2021literature,
-  title={Literature-Augmented Clinical Outcome Prediction},
-  author={Naik, Aakanksha and Parasa, Sravanthi and Feldman, Sergey and Wang, Lucy Lu and Hope, Tom},
-  journal={arXiv preprint arXiv:2111.08374},
-  year={2021}
+@inproceedings{naik-etal-2022-literature,
+    title = "Literature-Augmented Clinical Outcome Prediction",
+    author = "Naik, Aakanksha  and
+      Parasa, Sravanthi  and
+      Feldman, Sergey  and
+      Wang, Lucy  and
+      Hope, Tom",
+    booktitle = "Findings of the Association for Computational Linguistics: NAACL 2022",
+    month = jul,
+    year = "2022",
+    address = "Seattle, United States",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2022.findings-naacl.33",
+    doi = "10.18653/v1/2022.findings-naacl.33",
+    pages = "438--453",
+    abstract = "We present BEEP (Biomedical Evidence-Enhanced Predictions), a novel approach for clinical outcome prediction that retrieves patient-specific medical literature and incorporates it into predictive models. Based on each individual patient{'}s clinical notes, we train language models (LMs) to find relevant papers and fuse them with information from notes to predict outcomes such as in-hospital mortality. We develop methods to retrieve literature based on noisy, information-dense patient notes, and to augment existing outcome prediction models with retrieved papers in a manner that maximizes predictive accuracy. Our approach boosts predictive performance on three important clinical tasks in comparison to strong recent LM baselines, increasing F1 by up to 5 points and precision@Top-K by a large margin of over 25{\%}.",
 }
 ```
