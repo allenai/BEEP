@@ -124,6 +124,7 @@ if __name__ == '__main__':
         print('Extracting mentions from file {} ({})'.format(file, i))
         text = dataset.data[file]
         mentions[file] = {}
+        mentions[file]['tokenized_text'] = text
         test_dataset = batch_and_tokenize_data(text, args.batch_size)
         preds = []
         for batch in test_dataset:
