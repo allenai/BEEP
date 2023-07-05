@@ -1,3 +1,4 @@
+import gc
 import os
 import csv
 csv.field_size_limit(2147483647)
@@ -7,27 +8,62 @@ import spacy
 import scispacy
 from scispacy.linking import EntityLinker
 
-nlp = spacy.load("en_core_sci_sm")
+en_core_sci_sm_url = "https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz"
+try:
+    print("trying to load en_core_sci_sm")
+    nlp = spacy.load("en_core_sci_sm")
+except:
+    print("downloading en_core_sci_sm...")
+    import pip
+    pip.main(["install", en_core_sci_sm_url])
+    nlp = spacy.load("en_core_sci_sm")
+
+
+print("adding pipe...")
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "mesh"})
+print("linking...")
 linker = nlp.get_pipe("scispacy_linker")
+print("done linking")
 
 class TextDataset:
 
-    def __init__(self, doc_id_file, doc_text_file, ehr_entity_file):
-        self.doc_ids = pickle.load(open(doc_id_file, 'rb'))
+    def __init__(self, doc_rank_file, doc_text_file, ids2keep_file=None):
+        self.doc_ranks = pickle.load(open(doc_rank_file, 'rb'))
         self.doc_texts = pickle.load(open(doc_text_file, 'rb'))
-        self.ehr_entities = pickle.load(open(ehr_entity_file, 'rb'))
-        # TODO: Retrieve texts for each query/article pair and construct final dataset
-        # TODO: Make sure to add outcome too
+        self.data = {}
+        if ids2keep_file is not None:
+            ids2keep = pickle.load(open(ids2keep_file, 'rb'))
+            self.doc_ranks = {ehr_id: doc_ranks for (ehr_id, doc_ranks) in self.doc_ranks.items()
+                              if ehr_id in ids2keep}
+            gc.collect()
+        # TODO: Retrieve texts for each query/article pair and construct final dataset ???
+        # TODO: Make sure to add outcome too ???
 
-    def select_articles(self, k):
+    def select_articles(self, k, ranking_type):
+        print(f"selecting {k} top articles")
         # Order articles and select top k
         selected_ids = {}
-        for qid in self.doc_ids:
-            ordered_ids = list(reversed(sorted(self.doc_ids[qid], key=lambda x:x[1])))
+        for qid in self.doc_ranks:
+            sorted_ = sorted(self.doc_ranks[qid], key=lambda x: x[1])
+            if ranking_type == "similarity":
+                ordered_ids = list(reversed(sorted_))
+            elif ranking_type == "distance":
+                ordered_ids = list(sorted_)
+            else:
+                raise(ValueError(f"ranking_type {ranking_type} is not recognized"))
             end = min(len(ordered_ids), k) if k is not None else len(ordered_ids)
             selected_ids[qid] = ordered_ids[:end]
-        self.doc_ids = selected_ids
+        self.doc_ranks = selected_ids
+        gc.collect()
+
+    def create_dataset(self, outcome):
+        data = {}
+        for qid in self.doc_ranks:
+            data[qid] = {'outcome': outcome, 'articles': {}}
+            for pair in self.doc_ranks[qid]:
+                aid, score = pair
+                data[qid]['articles'][aid] = {'article_text': self.doc_texts[aid]['text'], 'judgement': 0}  # Dummy judgement labels
+        self.data = data
 
     def add_ehr_text(self, filepath):
         reader = csv.reader(open(filepath))
@@ -35,24 +71,18 @@ class TextDataset:
         for row in reader:
             if row[0] in self.data:
                 self.data[row[0]]['text'] = row[1]
+            else:
+                print(f"{row[0]} not in data")
 
-    def create_dataset(self, outcome):
-        data = {}
-        for qid in self.doc_ids:
-            data[qid] = {'outcome': outcome, 'articles': {}}
-            for pair in self.doc_ids[qid]:
-                aid, score = pair
-                data[qid]['articles'][aid] = {'article_text': self.doc_texts[aid]['text'], 'judgement': 0}  # Dummy judgement labels
-        self.data = data
-
-    def add_entities(self, cutoff=0.9):
-        for file in self.ehr_entities:
+    def add_ehr_entities(self, filepath, cutoff=0.9):
+        ehr_entities = pickle.load(open(filepath, 'rb'))
+        for file in ehr_entities:
             if file not in self.data:
                 continue
             # print('Adding entities for {}'.format(file))
             entities = {'mesh': [], 'non-mesh': []}
-            for sent in self.ehr_entities[file]:
-                for entity in self.ehr_entities[file][sent]:
+            for sent in ehr_entities[file]:
+                for entity in ehr_entities[file][sent]:
                     if 'mesh_ids' not in entity:
                         entities['non-mesh'].append(entity['mention'])
                         continue
@@ -64,6 +94,7 @@ class TextDataset:
                         if entity_mesh_text != '':
                             entities['mesh'].append(entity_mesh_text)
             self.data[file]['entities'] = entities
+
 
 class TRECDataset:
 

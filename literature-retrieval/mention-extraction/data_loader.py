@@ -2,19 +2,28 @@ import os
 import csv
 import math
 from nltk import sent_tokenize, word_tokenize
-
+import pickle
 
 class RawTextDataset:
-    def __init__(self, csv_file, tag_type):
-        self.data = self.read_raw_text_files(csv_file)
-        self.label_vocab = {'O': 0, 'B-PROB': 1, 'I-PROB': 2, 'B-TREAT': 3, 'I-TREAT': 4, 'B-TEST': 5, 'I-TEST': 6} if tag_type == 'i2b2' \
-                else {'O': 0, 'I-PAR': 1, 'I-INT': 2, 'I-OUT': 3}
+    def __init__(self, file, tag_type):
+        self.data = self.read_raw_text_files(file)
+        self.label_vocab = {'O': 0, 'B-PROB': 1, 'I-PROB': 2, 'B-TREAT': 3, 'I-TREAT': 4, 'B-TEST': 5, 'I-TEST': 6} \
+            if tag_type == 'i2b2' \
+            else {'O': 0, 'I-PAR': 1, 'I-INT': 2, 'I-OUT': 3}
 
 
-    def read_raw_text_files(self, csv_file):
+    def read_raw_text_files(self, file):
         files = {}
-        reader = csv.reader(open(csv_file))
-        next(reader, None)
+        if file.endswith(".csv"):
+            reader = csv.reader(open(file))
+            next(reader, None)
+        elif file.endswith(".pkl"):
+            reader = pickle.load(open(file, "rb"))
+            reader = [(key, value["text"]) for key, value in reader.items()]
+        else:
+            reader = None
+            raise(ValueError("file extension not recognized"))
+
         for row in reader:
             files[row[0]] = []
             text = row[1]
