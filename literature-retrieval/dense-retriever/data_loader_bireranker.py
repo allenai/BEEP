@@ -1,53 +1,69 @@
+import gc
 import os
 import csv
-csv.field_size_limit(2147483647)
 import pickle
 
 import spacy
+# seems not needed but without it the program failed to find something
 import scispacy
 from scispacy.linking import EntityLinker
 
-nlp = spacy.load("en_core_sci_sm")
+csv.field_size_limit(2147483647)
+
+
+en_core_sci_sm_url = "https://s3-us-west-2.amazonaws.com/ai2-s2-scispacy/releases/v0.5.1/en_core_sci_sm-0.5.1.tar.gz"
+try:
+    nlp = spacy.load("en_core_sci_sm")
+except:
+    print("downloading en_core_sci_sm...")
+    import pip
+    pip.main(["install", en_core_sci_sm_url])
+    nlp = spacy.load("en_core_sci_sm")
+
 nlp.add_pipe("scispacy_linker", config={"resolve_abbreviations": True, "linker_name": "mesh"})
 linker = nlp.get_pipe("scispacy_linker")
 
 class TextDataset:
 
-    def __init__(self, doc_id_file, doc_text_file, ehr_entity_file):
-        self.all_doc_ids = pickle.load(open(doc_id_file, 'rb'))
+    def __init__(self, doc_text_file, ehr_entity_file):
         self.doc_texts = pickle.load(open(doc_text_file, 'rb'))
         self.ehr_entities = pickle.load(open(ehr_entity_file, 'rb'))
+        self.all_doc_ids = list(self.doc_texts.keys())
+        self.query_texts = {}
+        self.texts = {}
+        self.data = {}
 
-    def add_ehr_text(self, filepath, outcome):
+    def add_ehr_text(self, filepath, ids2keep=None):
         reader = csv.reader(open(filepath))
         next(reader, None)
-        self.query_texts = {}
-        self.doc_ids = {}
-        ids2keep = pickle.load(open('../../data/pmv_ids.pkl', 'rb')) if outcome == 'pmv' else None
+        if ids2keep is not None:
+            ids2keep = pickle.load(open(ids2keep, 'rb'))
         for row in reader:
             if ids2keep is not None:
                 if row[0] not in ids2keep:
                     continue
             self.query_texts[row[0]] = row[1]
-            self.doc_ids[row[0]] = list(self.all_doc_ids)
 
-    def create_dataset(self, outcome):
+    def create_dataset(self, outcome, censor_after_year):
         data = {}
-        self.texts = {}
-        aid = [x for x in list(self.doc_ids.values())[0] if not x.startswith('PMC')]
+
+        aid = [x for x in self.all_doc_ids if not x.startswith('PMC')]
         for id in aid:
-            if int(self.doc_texts[id]['year']) > 2016 or self.doc_texts[id]['text'] == '':
+            if int(self.doc_texts[id]['year']) > censor_after_year or self.doc_texts[id]['text'] == '': # why censoring > 2016?
                 continue
             self.texts[id] = self.doc_texts[id]['text']
-        for qid in self.doc_ids:
+        del self.doc_texts
+        gc.collect()
+
+        for qid in self.query_texts.keys():
             data[qid] = {'outcome': outcome}
         self.data = data
 
     def add_entities(self, cutoff=0.9):
         for file in self.ehr_entities:
             if file not in self.data:
+                print(f"file {file} not in self.data")
                 continue
-            # print('Adding entities for {}'.format(file))
             entities = {'mesh': [], 'non-mesh': []}
             for sent in self.ehr_entities[file]:
                 for entity in self.ehr_entities[file][sent]:
@@ -62,6 +78,10 @@ class TextDataset:
                         if entity_mesh_text != '':
                             entities['mesh'].append(entity_mesh_text)
             self.data[file]['entities'] = entities
+
+        del self.ehr_entities
+        gc.collect()
+
 
 class TRECDataset:
 
