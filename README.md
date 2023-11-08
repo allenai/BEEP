@@ -34,16 +34,17 @@ To replicate any of our outcome prediction results, you only need to run the out
 
 ```
 python run_outcome_prediction.py 
-  --train <PATH_TO_TRAIN_CSV> 
-  --dev <PATH_TO_DEV_CSV> 
-  --test <PATH_TO_TEST_CSV> 
-  --init_model <HF_IDENTIFIER> 
+  --train_path <PATH_TO_TRAIN_CSV> 
+  --dev_path <PATH_TO_DEV_CSV> 
+  --test_path <PATH_TO_TEST_CSV> 
+  --init_model <HF_IDENTIFIER or PATH_TO_LOCAL_MODEL> 
   --out_dir <PATH_TO_OUTPUT_DIR> 
   --checkpoint <PATH_TO_TRAINED_MODEL> 
   --outcome <pmv/los/mortality> 
   --do_test 
   --strategy <average/softvote/weightvote/weightaverage> 
-  --lit_dir <PATH_TO_RERANKER_OUTPUT> 
+  --lit_ranks <PATH_TO_RERANKER_OUTPUT> 
+  --lit_file <PATH_TO_LITERATURE_PICKLE>
   --num_top_docs <K_VALUE>
 ```
 
