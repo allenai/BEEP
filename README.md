@@ -6,6 +6,8 @@ This code was developed in python 3.8 using the libraries listed in environment.
 
 ```conda env create -f environment.yml```
 
+NOTE: I (Izzy) had to use a significantly different set of package versions to create the env on an Apple Silicon MacOS laptop with Python 3.8.18. You can find my alternate package versions in environment_macos.yml, if you're trying to build for a sumular environment.
+
 Activate the conda environment using the command: ```conda activate beep-env```
 
 After activating the environment, run this command: ```python -m ipykernel install --user --name beep-env --display-name "Python (beep-env)"```. This will ensure that beep-env is available as a kernel option when running jupyter notebooks.

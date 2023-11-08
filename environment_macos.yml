@@ -1,0 +1,25 @@
+name: beep-env
+channels:
+  - pytorch
+  - defaults
+dependencies:
+  - pip>=21.1.1
+  - python=3.8.18
+  - setproctitle=1.2.2
+    #  - cudatoolkit>=10.1.243
+  - pip:
+     - ipykernel>=5.5.5
+     - cffi>=1.15.1
+     - numpy>=1.24.4
+     - pillow>=8.2.0
+     - nltk>=3.6.2
+     - jupyter
+     - torch>=1.7.1
+     - scikit_learn>=1.0.2
+     - scispacy>=0.4.0
+     - transformers>=4.1.1
+     - ray>=1.3.0
+     - ray[tune]
+     - protobuf>=3.20.3
+     - pandas
+     - biopython
